@@ -1,0 +1,850 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickBite | Self-Service Kiosk</title>
+
+    <style>
+        :root {
+            --primary: #e63926;
+            --primary-dark: #c72d1d;
+            --background: #f6f6f4;
+            --surface: #ffffff;
+            --text: #222222;
+            --muted: #777777;
+            --border: #e7e7e7;
+            --green: #218838;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: var(--background);
+            color: var(--text);
+        }
+
+        button {
+            font: inherit;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        button:focus-visible {
+            outline: 3px solid #222;
+            outline-offset: 3px;
+        }
+
+        header {
+            height: 76px;
+            padding: 0 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            font-size: 27px;
+            font-weight: 900;
+            letter-spacing: -1px;
+        }
+
+        .logo span {
+            color: var(--primary);
+        }
+
+        .header-note {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 340px;
+            min-height: calc(100vh - 76px);
+        }
+
+        main {
+            padding: 28px 32px 40px;
+            min-width: 0;
+        }
+
+        .welcome {
+            margin-bottom: 24px;
+        }
+
+        .welcome h1 {
+            font-size: clamp(26px, 3vw, 36px);
+            margin: 0 0 8px;
+        }
+
+        .welcome p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 16px;
+        }
+
+        .categories {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 28px;
+            overflow-x: auto;
+            padding: 3px 2px 8px;
+        }
+
+        .category {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: white;
+            padding: 14px 22px;
+            min-height: 52px;
+            white-space: nowrap;
+            font-weight: 700;
+            color: #444;
+        }
+
+        .category.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .section-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .section-heading h2 {
+            font-size: 21px;
+            margin: 0;
+        }
+
+        .section-heading span {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        .item-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .item-image {
+            height: 145px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f2e9;
+            border-radius: 12px;
+            font-size: 72px;
+            margin-bottom: 14px;
+        }
+
+        .item-card h3 {
+            font-size: 18px;
+            margin: 0 0 7px;
+        }
+
+        .item-card p {
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.5;
+            margin: 0 0 16px;
+            flex-grow: 1;
+        }
+
+        .item-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .price {
+            font-size: 18px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .add-button {
+            border: none;
+            border-radius: 9px;
+            padding: 11px 16px;
+            min-height: 44px;
+            background: var(--primary);
+            color: white;
+            font-weight: 700;
+        }
+
+        .add-button:hover,
+        .checkout-button:hover {
+            background: var(--primary-dark);
+        }
+
+        .order-panel {
+            background: var(--surface);
+            border-left: 1px solid var(--border);
+            padding: 28px 22px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100%;
+        }
+
+        .order-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .order-title h2 {
+            margin: 0;
+            font-size: 23px;
+        }
+
+        .item-count {
+            background: #fce8e5;
+            color: var(--primary);
+            font-size: 13px;
+            font-weight: 800;
+            border-radius: 20px;
+            padding: 7px 10px;
+        }
+
+        .order-items {
+            flex: 1;
+            padding-top: 8px;
+        }
+
+        .empty-order {
+            text-align: center;
+            color: var(--muted);
+            padding: 48px 12px;
+            line-height: 1.6;
+        }
+
+        .empty-order .icon {
+            font-size: 42px;
+            margin-bottom: 10px;
+        }
+
+        .order-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 10px;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .order-item-name {
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
+
+        .order-item-price {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .quantity-controls button {
+            width: 34px;
+            height: 34px;
+            border: 1px solid var(--border);
+            background: white;
+            border-radius: 8px;
+            font-size: 20px;
+        }
+
+        .quantity {
+            font-size: 14px;
+            font-weight: 700;
+            min-width: 12px;
+            text-align: center;
+        }
+
+        .line-total {
+            font-weight: 800;
+            font-size: 14px;
+            white-space: nowrap;
+            padding-top: 2px;
+        }
+
+        .order-summary {
+            border-top: 1px solid var(--border);
+            padding-top: 18px;
+            margin-top: 12px;
+        }
+
+        .summary-line {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .summary-line.muted {
+            color: var(--muted);
+        }
+
+        .summary-line.total {
+            font-size: 22px;
+            font-weight: 900;
+            margin-top: 18px;
+            margin-bottom: 20px;
+        }
+
+        .checkout-button {
+            width: 100%;
+            min-height: 58px;
+            border: none;
+            border-radius: 12px;
+            background: var(--primary);
+            color: white;
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .checkout-button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .clear-button {
+            display: block;
+            margin: 14px auto 0;
+            border: none;
+            background: transparent;
+            color: var(--muted);
+            padding: 8px;
+            font-size: 13px;
+        }
+
+        .clear-button:hover {
+            color: var(--primary);
+        }
+
+        .notice {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #222;
+            color: white;
+            padding: 14px 22px;
+            border-radius: 12px;
+            box-shadow: 0 6px 24px #0002;
+            font-size: 14px;
+            z-index: 10;
+            max-width: calc(100vw - 32px);
+            text-align: center;
+        }
+
+        .notice[hidden] {
+            display: none;
+        }
+
+        @media (max-width: 1050px) {
+            .layout {
+                grid-template-columns: minmax(0, 1fr) 300px;
+            }
+
+            main {
+                padding: 24px 20px;
+            }
+
+            .menu-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .item-image {
+                height: 125px;
+            }
+        }
+
+        @media (max-width: 700px) {
+            header {
+                padding: 0 18px;
+                height: 64px;
+            }
+
+            .header-note {
+                font-size: 12px;
+            }
+
+            .layout {
+                display: flex;
+                flex-direction: column;
+            }
+
+            main {
+                padding: 24px 16px;
+            }
+
+            .order-panel {
+                border-left: none;
+                border-top: 1px solid var(--border);
+                padding: 24px 18px;
+                min-height: 350px;
+            }
+
+            .menu-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 12px;
+            }
+
+            .item-card {
+                padding: 10px;
+            }
+
+            .item-image {
+                height: 100px;
+                font-size: 52px;
+            }
+
+            .item-card h3 {
+                font-size: 15px;
+            }
+
+            .item-card p {
+                font-size: 12px;
+            }
+
+            .price {
+                font-size: 16px;
+            }
+
+            .add-button {
+                padding: 10px 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="logo">Quick<span>Bite</span></div>
+        <div class="header-note">Self-service ordering</div>
+    </header>
+
+    <div class="layout">
+        <main>
+            <section class="welcome">
+                <h1>What are you craving?</h1>
+                <p>Choose your favorites and add them to your order.</p>
+            </section>
+
+            <nav class="categories" id="categories"
+                 aria-label="Menu categories"></nav>
+
+            <div class="section-heading">
+                <h2 id="menu-title">Popular Items</h2>
+                <span>Prices in USD</span>
+            </div>
+
+            <section class="menu-grid" id="menu-grid"
+                     aria-label="Menu items"></section>
+        </main>
+
+        <aside class="order-panel" aria-label="Your order">
+            <div class="order-title">
+                <h2>Your Order</h2>
+                <span class="item-count" id="item-count">0 items</span>
+            </div>
+
+            <div class="order-items" id="order-items" aria-live="polite">
+                <div class="empty-order">
+                    <div class="icon">🛍️</div>
+                    <strong>Your order is empty</strong>
+                    <div>Add something delicious!</div>
+                </div>
+            </div>
+
+            <div class="order-summary">
+                <div class="summary-line muted">
+                    <span>Subtotal</span>
+                    <span id="subtotal">$0.00</span>
+                </div>
+
+                <div class="summary-line muted">
+                    <span>Tax (8.25%)</span>
+                    <span id="tax">$0.00</span>
+                </div>
+
+                <div class="summary-line total">
+                    <span>Total</span>
+                    <span id="total">$0.00</span>
+                </div>
+
+                <button class="checkout-button" id="checkout"
+                        type="button" disabled>
+                    Checkout · $0.00
+                </button>
+
+                <button class="clear-button" id="clear-order" type="button">
+                    Clear order
+                </button>
+            </div>
+        </aside>
+    </div>
+
+    <div class="notice" id="notice" role="status"
+         aria-live="polite" hidden></div>
+
+    <script>
+        // Demo menu data. Edit this array to customize your kiosk.
+        const menu = [
+            {
+                id: 1,
+                name: "Classic Burger",
+                description: "Beef patty, lettuce, tomato, and house sauce.",
+                price: 5.99,
+                category: "Burgers",
+                emoji: "🍔"
+            },
+            {
+                id: 2,
+                name: "Cheeseburger",
+                description: "Juicy beef, melted cheese, and pickles.",
+                price: 6.99,
+                category: "Burgers",
+                emoji: "🍔"
+            },
+            {
+                id: 3,
+                name: "Double Burger",
+                description: "Two beef patties with double cheese.",
+                price: 8.99,
+                category: "Burgers",
+                emoji: "🍔"
+            },
+            {
+                id: 4,
+                name: "Crispy Chicken",
+                description: "Crispy chicken fillet with creamy mayo.",
+                price: 6.49,
+                category: "Chicken",
+                emoji: "🍗"
+            },
+            {
+                id: 5,
+                name: "Chicken Nuggets",
+                description: "Six golden nuggets with dipping sauce.",
+                price: 4.99,
+                category: "Chicken",
+                emoji: "🍗"
+            },
+            {
+                id: 6,
+                name: "French Fries",
+                description: "Hot, crispy, and lightly salted.",
+                price: 2.49,
+                category: "Sides",
+                emoji: "🍟"
+            },
+            {
+                id: 7,
+                name: "Onion Rings",
+                description: "Crunchy battered onion rings.",
+                price: 3.49,
+                category: "Sides",
+                emoji: "🧅"
+            },
+            {
+                id: 8,
+                name: "Soft Drink",
+                description: "Choose your favorite refreshing drink.",
+                price: 1.99,
+                category: "Drinks",
+                emoji: "🥤"
+            },
+            {
+                id: 9,
+                name: "Milkshake",
+                description: "A rich and creamy vanilla milkshake.",
+                price: 3.99,
+                category: "Drinks",
+                emoji: "🥛"
+            }
+        ];
+
+        const TAX_RATE = 0.0825;
+
+        let activeCategory = "Popular";
+        const order = new Map();
+
+        const categoriesElement = document.getElementById("categories");
+        const menuGrid = document.getElementById("menu-grid");
+        const orderItems = document.getElementById("order-items");
+        const notice = document.getElementById("notice");
+
+        let noticeTimeout;
+
+        function money(amount) {
+            return "$" + amount.toFixed(2);
+        }
+
+        function getCategories() {
+            return ["Popular", ...new Set(menu.map(item => item.category))];
+        }
+
+        function renderCategories() {
+            categoriesElement.innerHTML = "";
+
+            getCategories().forEach(category => {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className =
+                    "category" + (activeCategory === category ? " active" : "");
+                button.textContent = category;
+                button.setAttribute(
+                    "aria-pressed",
+                    String(activeCategory === category)
+                );
+
+                button.addEventListener("click", () => {
+                    activeCategory = category;
+                    renderCategories();
+                    renderMenu();
+                });
+
+                categoriesElement.appendChild(button);
+            });
+        }
+
+        function renderMenu() {
+            const items = activeCategory === "Popular"
+                ? menu.slice(0, 6)
+                : menu.filter(item => item.category === activeCategory);
+
+            document.getElementById("menu-title").textContent =
+                activeCategory === "Popular"
+                    ? "Popular Items"
+                    : activeCategory;
+
+            menuGrid.innerHTML = "";
+
+            items.forEach(item => {
+                const card = document.createElement("article");
+                card.className = "item-card";
+
+                const image = document.createElement("div");
+                image.className = "item-image";
+                image.textContent = item.emoji;
+                image.setAttribute("aria-hidden", "true");
+
+                const name = document.createElement("h3");
+                name.textContent = item.name;
+
+                const description = document.createElement("p");
+                description.textContent = item.description;
+
+                const bottom = document.createElement("div");
+                bottom.className = "item-bottom";
+
+                const price = document.createElement("span");
+                price.className = "price";
+                price.textContent = money(item.price);
+
+                const addButton = document.createElement("button");
+                addButton.type = "button";
+                addButton.className = "add-button";
+                addButton.textContent = "+ Add";
+                addButton.setAttribute("aria-label", "Add " + item.name);
+
+                addButton.addEventListener("click", () => {
+                    addToOrder(item.id);
+                });
+
+                bottom.append(price, addButton);
+                card.append(image, name, description, bottom);
+                menuGrid.appendChild(card);
+            });
+        }
+
+        function addToOrder(id) {
+            const item = menu.find(product => product.id === id);
+            const current = order.get(id);
+
+            order.set(id, {
+                item,
+                quantity: current ? current.quantity + 1 : 1
+            });
+
+            renderOrder();
+            showNotice(item.name + " added to your order");
+        }
+
+        function changeQuantity(id, change) {
+            const entry = order.get(id);
+            if (!entry) return;
+
+            entry.quantity += change;
+
+            if (entry.quantity <= 0) {
+                order.delete(id);
+            } else {
+                order.set(id, entry);
+            }
+
+            renderOrder();
+        }
+
+        function calculateTotals() {
+            let subtotal = 0;
+            let count = 0;
+
+            order.forEach(({ item, quantity }) => {
+                subtotal += item.price * quantity;
+                count += quantity;
+            });
+
+            // Round tax to cents before adding it to the subtotal.
+            subtotal = Math.round(subtotal * 100) / 100;
+            const tax = Math.round(subtotal * TAX_RATE * 100) / 100;
+            const total = subtotal + tax;
+
+            return { subtotal, tax, total, count };
+        }
+
+        function renderOrder() {
+            orderItems.innerHTML = "";
+
+            if (order.size === 0) {
+                const empty = document.createElement("div");
+                empty.className = "empty-order";
+                empty.innerHTML =
+                    '<div class="icon" aria-hidden="true">🛍️</div>' +
+                    '<strong>Your order is empty</strong>' +
+                    '<div>Add something delicious!</div>';
+                orderItems.appendChild(empty);
+            } else {
+                order.forEach(({ item, quantity }, id) => {
+                    const row = document.createElement("div");
+                    row.className = "order-row";
+
+                    const details = document.createElement("div");
+
+                    const name = document.createElement("div");
+                    name.className = "order-item-name";
+                    name.textContent = item.name;
+
+                    const unitPrice = document.createElement("div");
+                    unitPrice.className = "order-item-price";
+                    unitPrice.textContent = money(item.price) + " each";
+
+                    const controls = document.createElement("div");
+                    controls.className = "quantity-controls";
+
+                    const minus = document.createElement("button");
+                    minus.type = "button";
+                    minus.textContent = "−";
+                    minus.setAttribute(
+                        "aria-label", "Remove one " + item.name
+                    );
+                    minus.addEventListener("click", () => {
+                        changeQuantity(id, -1);
+                    });
+
+                    const quantityLabel = document.createElement("span");
+                    quantityLabel.className = "quantity";
+                    quantityLabel.textContent = quantity;
+
+                    const plus = document.createElement("button");
+                    plus.type = "button";
+                    plus.textContent = "+";
+                    plus.setAttribute(
+                        "aria-label", "Add one " + item.name
+                    );
+                    plus.addEventListener("click", () => {
+                        changeQuantity(id, 1);
+                    });
+
+                    controls.append(minus, quantityLabel, plus);
+                    details.append(name, unitPrice, controls);
+
+                    const lineTotal = document.createElement("div");
+                    lineTotal.className = "line-total";
+                    lineTotal.textContent = money(item.price * quantity);
+
+                    row.append(details, lineTotal);
+                    orderItems.appendChild(row);
+                });
+            }
+
+            const totals = calculateTotals();
+
+            document.getElementById("item-count").textContent =
+                totals.count + (totals.count === 1 ? " item" : " items");
+
+            document.getElementById("subtotal").textContent =
+                money(totals.subtotal);
+            document.getElementById("tax").textContent = money(totals.tax);
+            document.getElementById("total").textContent = money(totals.total);
+
+            const checkout = document.getElementById("checkout");
+            checkout.textContent = "Checkout · " + money(totals.total);
+            checkout.disabled = totals.count === 0;
+        }
+
+        function showNotice(message) {
+            clearTimeout(noticeTimeout);
+            notice.textContent = message;
+            notice.hidden = false;
+
+            noticeTimeout = setTimeout(() => {
+                notice.hidden = true;
+            }, 1800);
+        }
+
+        document.getElementById("clear-order").addEventListener("click", () => {
+            if (order.size === 0) return;
+
+            order.clear();
+            renderOrder();
+            showNotice("Order cleared");
+        });
+
+        document.getElementById("checkout").addEventListener("click", () => {
+            if (order.size === 0) return;
+
+            const totals = calculateTotals();
+
+            // MVP placeholder: no payment is processed.
+            showNotice("Demo checkout — total: " + money(totals.total));
+        });
+
+        renderCategories();
+        renderMenu();
+        renderOrder();
+    </script>
+</body>
+</html>
