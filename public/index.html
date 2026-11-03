@@ -4,31 +4,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vendor Name (Team Name)</title>
+    <title>83 GUYS | Portal Hub</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f4f4f4;
+            color: #222;
+        }
+
+        header {
+            background: #222;
+            color: white;
+            padding: 24px 40px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 28px;
+            letter-spacing: 1px;
+        }
+
+        main {
+            max-width: 850px;
+            margin: 60px auto;
+            padding: 0 24px;
+        }
+
+        .heading {
+            margin-bottom: 32px;
+        }
+
+        .heading h2 {
+            font-size: 30px;
+            margin: 0 0 8px;
+        }
+
+        .heading p {
+            color: #666;
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .interface-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .interface-button {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            min-height: 90px;
+            padding: 24px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            color: #222;
+            font-size: 18px;
+            font-weight: 600;
+            text-align: left;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+        }
+
+        .interface-button:hover {
+            background: #fafafa;
+            border-color: #888;
+        }
+
+        .interface-button:active {
+            background: #eee;
+        }
+
+        .arrow {
+            color: #888;
+            font-size: 22px;
+        }
+
+        footer {
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid #ddd;
+            color: #888;
+            font-size: 13px;
+        }
+
+        @media (max-width: 550px) {
+            header {
+                padding: 20px 24px;
+            }
+
+            main {
+                margin-top: 36px;
+            }
+
+            .interface-list {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
+
 <body>
 
-    <h1>83 GUYS</h1>
+    <header>
+        <h1>83 GUYS</h1>
+    </header>
 
-    <h2>Portal Hub</h2>
+    <main>
+        <div class="heading">
+            <h2>Portal Hub</h2>
+            <p>Select an interface to continue.</p>
+        </div>
 
-    <p>Select an interface:</p>
+        <div class="interface-list">
 
-    <button onclick="location.href='manager.html'">
-        Manager
-    </button>
+            <button class="interface-button"
+                    onclick="location.href='manager.html'">
+                Manager
+                <span class="arrow">→</span>
+            </button>
 
-    <button onclick="location.href='cashier.html'">
-        Cashier
-    </button>
+            <button class="interface-button"
+                    onclick="location.href='cashier.html'">
+                Cashier
+                <span class="arrow">→</span>
+            </button>
 
-    <button onclick="location.href='kiosk.html'">
-        Kiosk
-    </button>
+            <button class="interface-button"
+                    onclick="location.href='kiosk.html'">
+                Kiosk
+                <span class="arrow">→</span>
+            </button>
 
-    <button onclick="location.href='kitchen.html'">
-        Kitchen Display
-    </button>
+            <button class="interface-button"
+                    onclick="location.href='kitchen.html'">
+                Kitchen Display
+                <span class="arrow">→</span>
+            </button>
+
+        </div>
+
+        <footer>
+            83 GUYS · Internal Interface Navigation
+        </footer>
+    </main>
 
 </body>
 </html>
