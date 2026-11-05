@@ -1,6 +1,8 @@
-const TAX_RATE = 0.0825;
+const MENU_URL = "/api/kiosk/menu";
+const ORDERS_URL = "/api/kiosk/orders";
 const POPULAR_CATEGORY = "Popular";
 const NOTICE_DURATION_MS = 1800;
+const ORDER_PLACED_NOTICE_MS = 6000;
 
 // Where the cup illustration draws toppings and ice cubes.
 const TOPPING_POSITIONS = [
@@ -8,8 +10,11 @@ const TOPPING_POSITIONS = [
     [36, 131], [48, 131], [60, 131], [72, 131], [84, 131]
 ];
 const ICE_POSITIONS = [
-    [38, 68], [66, 66], [52, 84], [74, 88], [36, 96], [58, 104]
+    [38, 68], [66, 66], [52, 84], [74, 88]
 ];
+
+// Everything the server sends about the menu, set by loadMenu().
+let shop = null;
 
 let activeCategory = POPULAR_CATEGORY;
 const order = new Map();
@@ -18,9 +23,13 @@ const order = new Map();
 let customizingItem = null;
 let customization = null;
 
+let isPlacingOrder = false;
+
+const layout = document.getElementById("layout");
 const categoriesElement = document.getElementById("categories");
 const menuGrid = document.getElementById("menu-grid");
 const orderItems = document.getElementById("order-items");
+const checkout = document.getElementById("checkout");
 const notice = document.getElementById("notice");
 const customizer = document.getElementById("customizer");
 const customizerCup = document.getElementById("customizer-cup");
@@ -37,34 +46,34 @@ function findOption(options, id) {
     return options.find(option => option.id === id);
 }
 
-function getDefaultCustomization(item) {
-    return {
-        ...DEFAULT_CUSTOMIZATION,
-        toppings: [...item.includedToppings]
-    };
+function describeRecipe(item) {
+    return item.ingredients.join(", ");
 }
 
-function getToppingPrice(item, topping) {
-    return item.includedToppings.includes(topping.id) ? 0 : topping.price;
+// "toppings" holds only the extras; included toppings come with the drink.
+function getDefaultCustomization() {
+    return { ...shop.defaultChoices, toppings: [] };
 }
 
 function getUnitPrice(item, choices) {
     const toppingTotal = choices.toppings.reduce((sum, id) => {
-        return sum + getToppingPrice(item, findOption(TOPPINGS, id));
+        return sum + findOption(shop.toppings, id).price;
     }, 0);
 
-    return item.price + findOption(SIZES, choices.size).upcharge + toppingTotal;
+    return item.price +
+        findOption(shop.sizes, choices.size).upcharge +
+        toppingTotal;
 }
 
 function describeCustomization(choices) {
     const toppingNames = choices.toppings.map(id => {
-        return findOption(TOPPINGS, id).label;
+        return "+ " + findOption(shop.toppings, id).name;
     });
 
     return [
-        findOption(SIZES, choices.size).label,
-        findOption(SUGAR_LEVELS, choices.sugar).label + " sugar",
-        findOption(ICE_LEVELS, choices.ice).label,
+        findOption(shop.sizes, choices.size).label,
+        findOption(shop.sugarLevels, choices.sugar).label + " sugar",
+        findOption(shop.iceLevels, choices.ice).label,
         ...toppingNames
     ].join(" · ");
 }
@@ -81,7 +90,8 @@ function getOrderKey(item, choices) {
 }
 
 function createCupSvg(item, choices) {
-    const colors = choices.toppings.map(id => findOption(TOPPINGS, id).color);
+    const colors = [...item.includedToppingIds, ...choices.toppings]
+        .map(id => getToppingColor(findOption(shop.toppings, id)));
 
     const toppings = colors.length === 0 ? "" : TOPPING_POSITIONS
         .map(([x, y], index) => {
@@ -91,7 +101,7 @@ function createCupSvg(item, choices) {
         .join("");
 
     const cubes = ICE_POSITIONS
-        .slice(0, findOption(ICE_LEVELS, choices.ice).cubes)
+        .slice(0, ICE_CUBE_COUNTS[choices.ice])
         .map(([x, y]) => {
             return `<rect class="cup-ice" x="${x}" y="${y}" width="14" height="14" rx="3"/>`;
         })
@@ -101,7 +111,7 @@ function createCupSvg(item, choices) {
         <svg viewBox="0 0 120 160" focusable="false">
             <line class="cup-straw" x1="66" y1="50" x2="80" y2="5"/>
             <path class="cup-lid" d="M24 44 Q60 4 96 44 Z"/>
-            <polygon points="25,56 95,56 88,152 32,152" fill="${item.teaColor}"/>
+            <polygon points="25,56 95,56 88,152 32,152" fill="${getDrinkColor(item)}"/>
             ${cubes}
             ${toppings}
             <polygon class="cup-outline" points="24,44 96,44 88,152 32,152"/>
@@ -111,7 +121,9 @@ function createCupSvg(item, choices) {
 }
 
 function getCategories() {
-    return [POPULAR_CATEGORY, ...new Set(menu.map(item => item.category))];
+    const categories = shop.items.map(item => item.category);
+
+    return [POPULAR_CATEGORY, ...new Set(categories)];
 }
 
 function renderCategories() {
@@ -140,8 +152,8 @@ function renderCategories() {
 
 function renderMenu() {
     const items = activeCategory === POPULAR_CATEGORY
-        ? menu.filter(item => item.popular)
-        : menu.filter(item => item.category === activeCategory);
+        ? shop.items.filter(item => item.popular)
+        : shop.items.filter(item => item.category === activeCategory);
 
     document.getElementById("menu-title").textContent =
         activeCategory === POPULAR_CATEGORY
@@ -156,14 +168,14 @@ function renderMenu() {
 
         const image = document.createElement("div");
         image.className = "item-image";
-        image.innerHTML = createCupSvg(item, getDefaultCustomization(item));
+        image.innerHTML = createCupSvg(item, getDefaultCustomization());
         image.setAttribute("aria-hidden", "true");
 
         const name = document.createElement("h3");
         name.textContent = item.name;
 
         const description = document.createElement("p");
-        description.textContent = item.description;
+        description.textContent = describeRecipe(item);
 
         const bottom = document.createElement("div");
         bottom.className = "item-bottom";
@@ -188,8 +200,30 @@ function renderMenu() {
     });
 }
 
+// Shows a loading or error message where the drinks would be.
+function renderMenuMessage(message, showRetry) {
+    menuGrid.innerHTML = "";
+
+    const box = document.createElement("div");
+    box.className = "menu-message";
+    box.textContent = message;
+
+    if (showRetry) {
+        const retry = document.createElement("button");
+        retry.type = "button";
+        retry.className = "add-button";
+        retry.textContent = "Try again";
+        retry.addEventListener("click", loadMenu);
+        box.appendChild(retry);
+    }
+
+    menuGrid.appendChild(box);
+}
+
 // Builds one group of radio buttons or checkboxes for the customizer.
-function createChoiceGroup({ legend, type, name, options, isChecked, onChange }) {
+function createChoiceGroup({
+    legend, type, name, options, isChecked, isDisabled, onChange
+}) {
     const group = document.createElement("fieldset");
     group.className = "choice-group";
 
@@ -206,6 +240,7 @@ function createChoiceGroup({ legend, type, name, options, isChecked, onChange })
         input.name = name;
         input.value = option.id;
         input.checked = isChecked(option);
+        input.disabled = isDisabled ? isDisabled(option) : false;
         input.addEventListener("change", () => {
             onChange(option, input.checked);
             updateCustomizerSummary();
@@ -229,7 +264,7 @@ function createChoiceGroup({ legend, type, name, options, isChecked, onChange })
 }
 
 function getSizeOptions() {
-    return SIZES.map(size => ({
+    return shop.sizes.map(size => ({
         ...size,
         detail: size.upcharge > 0
             ? size.detail + " · +" + money(size.upcharge)
@@ -238,14 +273,13 @@ function getSizeOptions() {
 }
 
 function getToppingOptions(item) {
-    return TOPPINGS.map(topping => {
-        const price = getToppingPrice(item, topping);
-
-        return {
-            ...topping,
-            detail: price > 0 ? "+" + money(price) : "Included"
-        };
-    });
+    return shop.toppings.map(topping => ({
+        ...topping,
+        label: topping.name,
+        detail: item.includedToppingIds.includes(topping.id)
+            ? "Included"
+            : "+" + money(topping.price)
+    }));
 }
 
 function toggleTopping(topping, selected) {
@@ -275,7 +309,7 @@ function renderCustomizerOptions(item) {
             legend: "Sugar level",
             type: "radio",
             name: "sugar",
-            options: SUGAR_LEVELS,
+            options: shop.sugarLevels,
             isChecked: level => level.id === customization.sugar,
             onChange: level => {
                 customization.sugar = level.id;
@@ -285,18 +319,23 @@ function renderCustomizerOptions(item) {
             legend: "Ice level",
             type: "radio",
             name: "ice",
-            options: ICE_LEVELS,
+            options: shop.iceLevels,
             isChecked: level => level.id === customization.ice,
             onChange: level => {
                 customization.ice = level.id;
             }
         }),
         createChoiceGroup({
-            legend: "Toppings",
+            legend: "Add toppings",
             type: "checkbox",
             name: "toppings",
             options: getToppingOptions(item),
-            isChecked: topping => customization.toppings.includes(topping.id),
+            isChecked: topping => {
+                return item.includedToppingIds.includes(topping.id);
+            },
+            isDisabled: topping => {
+                return item.includedToppingIds.includes(topping.id);
+            },
             onChange: toggleTopping
         })
     );
@@ -311,11 +350,11 @@ function updateCustomizerSummary() {
 
 function openCustomizer(item) {
     customizingItem = item;
-    customization = getDefaultCustomization(item);
+    customization = getDefaultCustomization();
 
     document.getElementById("customizer-title").textContent = item.name;
     document.getElementById("customizer-description").textContent =
-        item.description;
+        describeRecipe(item);
 
     renderCustomizerOptions(item);
     updateCustomizerSummary();
@@ -361,12 +400,16 @@ function calculateTotals() {
         count += quantity;
     });
 
-    // Round tax to cents before adding it to the subtotal.
-    subtotal = Math.round(subtotal * 100) / 100;
-    const tax = Math.round(subtotal * TAX_RATE * 100) / 100;
-    const total = subtotal + tax;
+    // Round to cents the same way the server does, so the totals always match.
+    const subtotalCents = Math.round(subtotal * 100);
+    const taxCents = Math.round(subtotalCents * shop.taxRate);
 
-    return { subtotal, tax, total, count };
+    return {
+        subtotal: subtotalCents / 100,
+        tax: taxCents / 100,
+        total: (subtotalCents + taxCents) / 100,
+        count
+    };
 }
 
 function renderOrder() {
@@ -450,19 +493,81 @@ function renderOrder() {
     document.getElementById("tax").textContent = money(totals.tax);
     document.getElementById("total").textContent = money(totals.total);
 
-    const checkout = document.getElementById("checkout");
-    checkout.textContent = "Checkout · " + money(totals.total);
-    checkout.disabled = totals.count === 0;
+    checkout.textContent = isPlacingOrder
+        ? "Placing your order…"
+        : "Checkout · " + money(totals.total);
+    checkout.disabled = totals.count === 0 || isPlacingOrder;
 }
 
-function showNotice(message) {
+function showNotice(message, duration = NOTICE_DURATION_MS) {
     clearTimeout(noticeTimeout);
     notice.textContent = message;
     notice.hidden = false;
 
     noticeTimeout = setTimeout(() => {
         notice.hidden = true;
-    }, NOTICE_DURATION_MS);
+    }, duration);
+}
+
+function getOrderRequest() {
+    const items = [...order.values()].map(({ item, choices, quantity }) => ({
+        menuItemId: item.id,
+        quantity,
+        size: choices.size,
+        sugar: choices.sugar,
+        ice: choices.ice,
+        toppingIds: choices.toppings
+    }));
+
+    return { items };
+}
+
+async function submitOrder() {
+    const response = await fetch(ORDERS_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(getOrderRequest())
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+        throw new Error(result.message);
+    }
+
+    return result;
+}
+
+// The order is locked while it saves, so what's on screen is what gets placed.
+function setPlacingOrder(placing) {
+    isPlacingOrder = placing;
+    layout.inert = placing;
+    renderOrder();
+}
+
+async function loadMenu() {
+    renderMenuMessage("Loading the menu…", false);
+
+    try {
+        const response = await fetch(MENU_URL);
+
+        if (!response.ok) {
+            throw new Error("Menu request failed: " + response.status);
+        }
+
+        shop = await response.json();
+    } catch (error) {
+        console.error(error);
+        renderMenuMessage("We couldn't load the menu right now.", true);
+        return;
+    }
+
+    document.getElementById("tax-label").textContent =
+        "Tax (" + (shop.taxRate * 100).toFixed(2) + "%)";
+
+    renderCategories();
+    renderMenu();
+    renderOrder();
 }
 
 document.getElementById("customizer-form").addEventListener("submit", event => {
@@ -484,15 +589,25 @@ document.getElementById("clear-order").addEventListener("click", () => {
     showNotice("Order cleared");
 });
 
-document.getElementById("checkout").addEventListener("click", () => {
-    if (order.size === 0) return;
+checkout.addEventListener("click", async () => {
+    if (order.size === 0 || isPlacingOrder) return;
 
-    const totals = calculateTotals();
+    setPlacingOrder(true);
 
-    // MVP placeholder: no payment is processed.
-    showNotice("Demo checkout — total: " + money(totals.total));
+    try {
+        const result = await submitOrder();
+
+        order.clear();
+        showNotice(
+            "Order #" + result.orderId + " placed. Total: $" + result.total,
+            ORDER_PLACED_NOTICE_MS
+        );
+    } catch (error) {
+        console.error(error);
+        showNotice("We couldn't place your order. Please try again.");
+    }
+
+    setPlacingOrder(false);
 });
 
-renderCategories();
-renderMenu();
-renderOrder();
+loadMenu();

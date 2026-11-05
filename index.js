@@ -2,12 +2,14 @@
 const express = require('express');
 const path = require('path');
 const pool = require('./db');
+const kioskRoutes = require('./routes/kiosk');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/api/kiosk', kioskRoutes);
 
 // Test database connection
 app.get('/api/db-test', async (req, res) => {
