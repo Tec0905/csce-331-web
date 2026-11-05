@@ -143,6 +143,18 @@ main {
     gap: 18px;
 }
 
+.menu-message {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 64px 16px;
+    color: var(--muted);
+    font-size: 18px;
+    font-weight: 700;
+}
+
 .item-card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -528,6 +540,19 @@ main {
 
 .choice input:checked + .choice-text small {
     color: white;
+}
+
+/* Included toppings come with the drink, so they can't be turned off. */
+.choice input:disabled,
+.choice:has(input:disabled) {
+    cursor: not-allowed;
+}
+
+.choice input:disabled + .choice-text,
+.choice input:disabled + .choice-text small {
+    background: var(--milk-tea);
+    border-color: var(--milk-tea);
+    color: var(--text);
 }
 
 .choice input:focus-visible + .choice-text {
