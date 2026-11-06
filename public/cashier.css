@@ -1,0 +1,483 @@
+:root {
+    --primary: #a32a1c;
+    --primary-dark: #7f1f14;
+    --espresso: #2e1a12;
+    --espresso-soft: #46291d;
+    --cream: #fbf4e8;
+    --counter: #ece3d3;
+    --tile: #fffdf8;
+    --border: #d9ccb4;
+    --muted: #6a5548;
+    --honey: #f4b942;
+    --honey-dark: #d99a1f;
+    --header-height: 56px;
+    --heading-font: "Fredoka", "Trebuchet MS", Arial, sans-serif;
+    --body-font: "Nunito", Arial, Helvetica, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: var(--body-font);
+    background: var(--counter);
+    color: var(--espresso);
+    overflow: hidden;
+}
+
+h2 {
+    font-family: var(--heading-font);
+    font-weight: 600;
+    margin: 0;
+}
+
+button {
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+button:focus-visible {
+    outline: 3px solid var(--honey-dark);
+    outline-offset: 2px;
+}
+
+header {
+    height: var(--header-height);
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--espresso);
+    color: var(--cream);
+}
+
+.logo {
+    font-family: var(--heading-font);
+    font-size: 26px;
+    font-weight: 700;
+}
+
+.logo span {
+    color: var(--honey);
+}
+
+.header-note {
+    display: flex;
+    gap: 18px;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+#clock {
+    font-variant-numeric: tabular-nums;
+    color: var(--honey);
+}
+
+/* Menu | drink options | ticket. Each column scrolls on its own. */
+.register {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 290px 350px;
+    height: calc(100vh - var(--header-height));
+}
+
+.menu-pane {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    padding: 12px 12px 0;
+}
+
+.categories {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 10px;
+    flex-shrink: 0;
+}
+
+.category {
+    flex-shrink: 0;
+    min-height: 48px;
+    padding: 0 20px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: var(--tile);
+    font-weight: 800;
+    font-size: 15px;
+    white-space: nowrap;
+}
+
+.category.active {
+    background: var(--espresso);
+    border-color: var(--espresso);
+    color: var(--cream);
+}
+
+.menu-grid {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-auto-rows: 84px;
+    gap: 8px;
+    padding-bottom: 12px;
+    align-content: start;
+}
+
+.menu-message {
+    grid-column: 1 / -1;
+    padding: 48px 12px;
+    text-align: center;
+    color: var(--muted);
+    font-weight: 700;
+}
+
+.menu-message button {
+    display: block;
+    margin: 14px auto 0;
+    min-height: 48px;
+    padding: 0 24px;
+    border: none;
+    border-radius: 10px;
+    background: var(--primary);
+    color: white;
+    font-weight: 800;
+}
+
+.drink-button {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 9px 10px 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--tile);
+    text-align: left;
+    overflow: hidden;
+}
+
+/* The left edge shows the category, so tiles can be found by color. */
+.drink-button::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 6px;
+    background: var(--category-color, var(--border));
+}
+
+.drink-button:active {
+    background: var(--cream);
+}
+
+.drink-name {
+    font-weight: 800;
+    font-size: 15px;
+    line-height: 1.15;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.drink-price {
+    font-family: var(--heading-font);
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--muted);
+}
+
+/* Options for whichever drink is selected on the ticket */
+.options-pane {
+    min-height: 0;
+    overflow-y: auto;
+    padding: 12px 14px;
+    border-left: 1px solid var(--border);
+    background: var(--cream);
+}
+
+.options-empty {
+    color: var(--muted);
+    font-weight: 700;
+    line-height: 1.5;
+    padding: 24px 6px;
+}
+
+.options-heading {
+    font-size: 20px;
+    margin-bottom: 14px;
+    line-height: 1.2;
+}
+
+.option-group {
+    border: none;
+    padding: 0;
+    margin: 0 0 14px;
+}
+
+.option-group legend {
+    font-family: var(--heading-font);
+    font-weight: 600;
+    font-size: 15px;
+    padding: 0;
+    margin-bottom: 6px;
+}
+
+.option-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.option {
+    min-height: 46px;
+    min-width: 56px;
+    padding: 4px 12px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: var(--tile);
+    font-weight: 800;
+    font-size: 14px;
+    line-height: 1.15;
+}
+
+.option small {
+    display: block;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.option[aria-pressed="true"] {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+.option[aria-pressed="true"] small {
+    color: white;
+}
+
+.option:disabled {
+    cursor: not-allowed;
+    background: var(--counter);
+    border-color: var(--counter);
+    color: var(--espresso);
+}
+
+/* Ticket */
+.ticket {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background: var(--espresso);
+    color: var(--cream);
+    padding: 14px 16px;
+}
+
+.ticket-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--espresso-soft);
+}
+
+.ticket-title h2 {
+    font-size: 22px;
+}
+
+.item-count {
+    background: var(--espresso-soft);
+    padding: 5px 11px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.ticket-lines {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 6px 0;
+}
+
+.ticket-empty {
+    color: #c9b8a6;
+    font-weight: 700;
+    padding: 32px 4px;
+    line-height: 1.5;
+}
+
+.ticket-line {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 10px;
+    width: 100%;
+    margin: 0 0 6px;
+    padding: 10px;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    background: var(--espresso-soft);
+    text-align: left;
+}
+
+.ticket-line.selected {
+    border-color: var(--honey);
+}
+
+.line-name {
+    font-weight: 800;
+    font-size: 15px;
+}
+
+.line-choices {
+    grid-column: 1;
+    font-size: 12.5px;
+    line-height: 1.35;
+    color: #d8c8b6;
+}
+
+.line-total {
+    grid-row: 1;
+    grid-column: 2;
+    font-weight: 800;
+    font-size: 15px;
+}
+
+.line-controls {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.line-controls button {
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 10px;
+    background: var(--cream);
+    color: var(--espresso);
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.line-controls .remove {
+    margin-left: auto;
+    width: auto;
+    padding: 0 14px;
+    font-size: 14px;
+    background: transparent;
+    color: #f2b6ad;
+    border: 2px solid #7b3a2e;
+}
+
+.line-qty {
+    min-width: 28px;
+    text-align: center;
+    font-weight: 800;
+    font-size: 18px;
+}
+
+.ticket-summary {
+    border-top: 1px solid var(--espresso-soft);
+    padding-top: 10px;
+}
+
+.summary-line {
+    display: flex;
+    justify-content: space-between;
+    font-size: 15px;
+    color: #d8c8b6;
+    margin-bottom: 6px;
+    font-variant-numeric: tabular-nums;
+}
+
+.summary-line.total {
+    font-family: var(--heading-font);
+    font-weight: 700;
+    font-size: 26px;
+    color: var(--cream);
+    margin: 8px 0 12px;
+}
+
+.ticket-actions {
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 8px;
+}
+
+.clear-button,
+.submit-button {
+    min-height: 62px;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 17px;
+}
+
+.clear-button {
+    background: transparent;
+    border: 2px solid var(--espresso-soft);
+    color: var(--cream);
+}
+
+.submit-button {
+    border: none;
+    background: var(--honey);
+    color: var(--espresso);
+    font-size: 19px;
+}
+
+.submit-button:disabled {
+    background: var(--espresso-soft);
+    color: #a8978a;
+    cursor: not-allowed;
+}
+
+.notice {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: calc(100vw - 32px);
+    padding: 14px 22px;
+    border-radius: 10px;
+    background: var(--espresso);
+    color: var(--cream);
+    font-weight: 700;
+    box-shadow: 0 6px 24px #0003;
+    z-index: 10;
+}
+
+.notice.error {
+    background: var(--primary);
+}
+
+.notice[hidden] {
+    display: none;
+}
+
+/* Smaller landscape screens: narrower side columns. */
+@media (max-width: 1100px) {
+    .register {
+        grid-template-columns: minmax(0, 1fr) 240px 310px;
+    }
+
+    .menu-grid {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    }
+}
