@@ -1,12 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cashier</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>83 GUYS | Cashier</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap">
+    <link rel="stylesheet" href="cashier.css">
 </head>
+
 <body>
-  <h1>Hello World, this is a test</h1>
-  <p>Cashier view</p>
+    <header>
+        <div class="logo">83<span>GUYS</span></div>
+        <div class="header-note">
+            <span>Register</span>
+            <span id="clock"></span>
+        </div>
+    </header>
+
+    <div class="register">
+        <section class="menu-pane" aria-label="Menu">
+            <nav class="categories" id="categories"
+                 aria-label="Menu categories"></nav>
+            <div class="menu-grid" id="menu-grid"></div>
+        </section>
+
+        <section class="options-pane" id="options-pane"
+                 aria-label="Customize selected drink"></section>
+
+        <aside class="ticket" aria-label="Current order">
+            <div class="ticket-title">
+                <h2>Order</h2>
+                <span class="item-count" id="item-count">0 drinks</span>
+            </div>
+
+            <div class="ticket-lines" id="ticket-lines"
+                 aria-live="polite"></div>
+
+            <div class="ticket-summary">
+                <div class="summary-line">
+                    <span>Subtotal</span>
+                    <span id="subtotal">$0.00</span>
+                </div>
+                <div class="summary-line">
+                    <span id="tax-label">Tax</span>
+                    <span id="tax">$0.00</span>
+                </div>
+                <div class="summary-line total">
+                    <span>Total</span>
+                    <span id="total">$0.00</span>
+                </div>
+
+                <div class="ticket-actions">
+                    <button class="clear-button" id="clear-order"
+                            type="button">Clear</button>
+                    <button class="submit-button" id="submit-order"
+                            type="button" disabled>Submit order</button>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <div class="notice" id="notice" role="status"
+         aria-live="polite" hidden></div>
+
+    <script src="cashier.js"></script>
 </body>
 </html>
