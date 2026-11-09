@@ -1,20 +1,290 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Manager</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>83 GUYS | Manager Dashboard</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap">
+    <link rel="stylesheet" href="manager.css">
 </head>
+
 <body>
-  <h1>Manager</h1>
-  <p id="output"></p>
+    <a class="skip-link" href="#main">Skip to main content</a>
 
-  <script>
-    function helloWorld() {
-      console.log("Hello World");
-      document.getElementById("output").textContent = "Hello World";
-    }
+    <header class="topbar">
+        <div class="logo">83<span>GUYS</span></div>
+        <h1 class="page-title">Manager Dashboard</h1>
+        <span class="clock" id="clock" aria-hidden="true"></span>
+    </header>
 
-    helloWorld();
-  </script>
+    <div class="tabs" role="tablist" aria-label="Dashboard sections">
+        <button class="tab" role="tab" id="tab-reports" aria-controls="panel-reports"
+                aria-selected="true" type="button">Reports</button>
+        <button class="tab" role="tab" id="tab-menu" aria-controls="panel-menu"
+                aria-selected="false" tabindex="-1" type="button">Menu</button>
+        <button class="tab" role="tab" id="tab-inventory" aria-controls="panel-inventory"
+                aria-selected="false" tabindex="-1" type="button">Inventory</button>
+    </div>
+
+    <main id="main">
+        <!-- ===================== Reports ===================== -->
+        <section class="panel" role="tabpanel" id="panel-reports"
+                 aria-labelledby="tab-reports" tabindex="0">
+
+            <form class="filter-bar" id="range-form">
+                <div class="field">
+                    <label for="range-start">From</label>
+                    <input type="date" id="range-start" required>
+                </div>
+                <div class="field">
+                    <label for="range-end">To</label>
+                    <input type="date" id="range-end" required>
+                </div>
+                <div class="presets" role="group" aria-label="Quick date ranges">
+                    <button type="button" class="chip" data-days="0">Today</button>
+                    <button type="button" class="chip" data-days="6">Last 7 days</button>
+                    <button type="button" class="chip" data-days="29">Last 30 days</button>
+                    <button type="button" class="chip" data-days="364">Last 365 days</button>
+                </div>
+                <button type="submit" class="button primary">Run reports</button>
+            </form>
+
+            <p class="range-label" id="range-label" aria-live="polite"></p>
+
+            <div class="kpis" id="kpis">
+                <div class="kpi"><span class="kpi-label">Sales (before tax)</span>
+                    <span class="kpi-value" id="kpi-sales">–</span></div>
+                <div class="kpi"><span class="kpi-label">Orders</span>
+                    <span class="kpi-value" id="kpi-orders">–</span></div>
+                <div class="kpi"><span class="kpi-label">Drinks sold</span>
+                    <span class="kpi-value" id="kpi-drinks">–</span></div>
+                <div class="kpi"><span class="kpi-label">Average order</span>
+                    <span class="kpi-value" id="kpi-average">–</span></div>
+                <div class="kpi"><span class="kpi-label">Tax collected</span>
+                    <span class="kpi-value" id="kpi-tax">–</span></div>
+            </div>
+
+            <div class="report-grid">
+                <article class="card wide">
+                    <header class="card-header">
+                        <h2 id="sales-title">Sales by drink</h2>
+                        <button type="button" class="link-button" data-toggle-table="sales"
+                                aria-expanded="false" aria-controls="sales-table-wrap">
+                            Show as table
+                        </button>
+                    </header>
+                    <p class="card-note">Top 12 drinks by revenue. Hover or focus a bar for details.</p>
+                    <div class="chart" id="sales-chart" role="group"
+                         aria-labelledby="sales-title"></div>
+                    <div class="table-wrap" id="sales-table-wrap" hidden></div>
+                </article>
+
+                <article class="card wide">
+                    <header class="card-header">
+                        <h2 id="hourly-title">Sales by hour of day</h2>
+                        <button type="button" class="link-button" data-toggle-table="hourly"
+                                aria-expanded="false" aria-controls="hourly-table-wrap">
+                            Show as table
+                        </button>
+                    </header>
+                    <p class="card-note">Sales before tax for each hour, added up over the whole date range.</p>
+                    <div class="chart" id="hourly-chart" role="group"
+                         aria-labelledby="hourly-title"></div>
+                    <div class="table-wrap" id="hourly-table-wrap" hidden></div>
+                </article>
+
+                <article class="card">
+                    <header class="card-header">
+                        <h2>Product usage</h2>
+                    </header>
+                    <p class="card-note">Ingredients used by recipes in this date range.
+                        Extra toppings are counted in inventory but not here.</p>
+                    <div class="table-wrap scroll" id="usage-table-wrap"></div>
+                </article>
+
+                <article class="card">
+                    <header class="card-header">
+                        <h2>Restock report</h2>
+                        <button type="button" class="link-button" id="go-inventory">
+                            Open inventory
+                        </button>
+                    </header>
+                    <p class="card-note" id="restock-note">Items at or below their reorder level,
+                        or about to run out at the current rate.</p>
+                    <div class="table-wrap scroll" id="restock-table-wrap"></div>
+                </article>
+            </div>
+        </section>
+
+        <!-- ===================== Menu ===================== -->
+        <section class="panel" role="tabpanel" id="panel-menu"
+                 aria-labelledby="tab-menu" tabindex="0" hidden>
+
+            <div class="toolbar">
+                <div class="field">
+                    <label for="menu-search">Search</label>
+                    <input type="search" id="menu-search" placeholder="Drink name">
+                </div>
+                <div class="field">
+                    <label for="menu-category-filter">Category</label>
+                    <select id="menu-category-filter">
+                        <option value="">All categories</option>
+                    </select>
+                </div>
+                <label class="check">
+                    <input type="checkbox" id="menu-show-inactive" checked>
+                    Show items not on sale
+                </label>
+                <button type="button" class="button primary push-right" id="add-menu-item">
+                    + Add menu item
+                </button>
+            </div>
+
+            <div class="card">
+                <div class="table-wrap">
+                    <table class="data-table" id="menu-table">
+                        <caption class="sr-only">Menu items. Change a price and press Save.</caption>
+                        <thead>
+                            <tr>
+                                <th scope="col">Drink</th>
+                                <th scope="col">Category</th>
+                                <th scope="col" class="num">Price</th>
+                                <th scope="col">On sale</th>
+                                <th scope="col">Recipe</th>
+                                <th scope="col"><span class="sr-only">Actions</span></th>
+                            </tr>
+                        </thead>
+                        <tbody id="menu-rows"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================== Inventory ===================== -->
+        <section class="panel" role="tabpanel" id="panel-inventory"
+                 aria-labelledby="tab-inventory" tabindex="0" hidden>
+
+            <div class="toolbar">
+                <div class="field">
+                    <label for="inventory-search">Search</label>
+                    <input type="search" id="inventory-search" placeholder="Ingredient name">
+                </div>
+                <label class="check">
+                    <input type="checkbox" id="inventory-low-only">
+                    Only show items that need restocking
+                </label>
+                <button type="button" class="button primary push-right" id="add-inventory-item">
+                    + Add inventory item
+                </button>
+            </div>
+
+            <div class="card">
+                <div class="table-wrap">
+                    <table class="data-table" id="inventory-table">
+                        <caption class="sr-only">Inventory. Enter an amount and press Restock to add stock.</caption>
+                        <thead>
+                            <tr>
+                                <th scope="col">Item</th>
+                                <th scope="col">Category</th>
+                                <th scope="col" class="num">On hand</th>
+                                <th scope="col" class="num">Reorder at</th>
+                                <th scope="col" class="num">Days left</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Restock</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-rows"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Add / edit a menu item -->
+    <dialog class="dialog" id="menu-dialog" aria-labelledby="menu-dialog-title">
+        <form id="menu-form" novalidate>
+            <h2 id="menu-dialog-title">Add menu item</h2>
+
+            <div class="form-grid">
+                <div class="field">
+                    <label for="menu-name">Name</label>
+                    <input type="text" id="menu-name" maxlength="60" required>
+                </div>
+                <div class="field">
+                    <label for="menu-category">Category</label>
+                    <input type="text" id="menu-category" list="category-options"
+                           maxlength="40" required>
+                    <datalist id="category-options"></datalist>
+                </div>
+                <div class="field">
+                    <label for="menu-price">Price (USD)</label>
+                    <input type="number" id="menu-price" min="0.01" max="100"
+                           step="0.01" inputmode="decimal" required>
+                </div>
+                <label class="check align-end">
+                    <input type="checkbox" id="menu-active" checked>
+                    On sale
+                </label>
+            </div>
+
+            <fieldset class="recipe">
+                <legend>Recipe (amount used per drink)</legend>
+                <p class="card-note">Orders subtract these amounts from inventory.</p>
+                <div id="recipe-lines"></div>
+                <button type="button" class="button" id="add-recipe-line">+ Add ingredient</button>
+            </fieldset>
+
+            <p class="form-error" id="menu-form-error" role="alert"></p>
+
+            <div class="dialog-actions">
+                <button type="button" class="button" id="menu-cancel">Cancel</button>
+                <button type="submit" class="button primary" id="menu-save">Save</button>
+            </div>
+        </form>
+    </dialog>
+
+    <!-- Add an inventory item -->
+    <dialog class="dialog" id="inventory-dialog" aria-labelledby="inventory-dialog-title">
+        <form id="inventory-form" novalidate>
+            <h2 id="inventory-dialog-title">Add inventory item</h2>
+
+            <div class="form-grid">
+                <div class="field">
+                    <label for="inventory-name">Name</label>
+                    <input type="text" id="inventory-name" maxlength="60" required>
+                </div>
+                <div class="field">
+                    <label for="inventory-category">Category</label>
+                    <input type="text" id="inventory-category" list="inventory-category-options"
+                           maxlength="40" required>
+                    <datalist id="inventory-category-options"></datalist>
+                </div>
+                <div class="field">
+                    <label for="inventory-unit">Unit</label>
+                    <select id="inventory-unit" required></select>
+                </div>
+                <div class="field">
+                    <label for="inventory-on-hand">Starting quantity</label>
+                    <input type="number" id="inventory-on-hand" min="0" step="any" value="0" required>
+                </div>
+            </div>
+
+            <p class="form-error" id="inventory-form-error" role="alert"></p>
+
+            <div class="dialog-actions">
+                <button type="button" class="button" id="inventory-cancel">Cancel</button>
+                <button type="submit" class="button primary">Save</button>
+            </div>
+        </form>
+    </dialog>
+
+    <div class="tooltip" id="tooltip" role="tooltip" hidden></div>
+    <div class="notice" id="notice" role="status" aria-live="polite" hidden></div>
+
+    <script src="manager.js"></script>
 </body>
 </html>
