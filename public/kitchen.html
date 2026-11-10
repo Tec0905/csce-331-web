@@ -1,10 +1,72 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Kitchen Display</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>83 GUYS | Kitchen Display</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap">
+    <link rel="stylesheet" href="kitchen.css">
+    <script src="kitchen.js" defer></script>
 </head>
 <body>
-    <h1>Hello World!</h1>
-    <h2>Kitchen Display</h2>
+    <a class="skip-link" href="#board">Skip to orders</a>
+    <header class="topbar">
+        <a class="logo" href="index.html" aria-label="83 Guys Portal Hub">83<span>GUYS</span></a>
+        <span class="screen-name">Kitchen Display</span>
+        <div class="top-right">
+            <span id="connection" class="connection" role="status">Connecting…</span>
+            <time id="clock" aria-label="Current time"></time>
+            <button id="refresh" class="refresh-btn" type="button">Refresh</button>
+        </div>
+    </header>
+
+    <main id="board">
+        <div class="intro">
+            <div>
+                <h1>Order board</h1>
+                <p>Incoming kiosk and cashier orders · Updates every 5 seconds</p>
+            </div>
+            <div class="summary" aria-label="Order counts">
+                <div><strong id="new-count">0</strong><span>New</span></div>
+                <div><strong id="preparing-count">0</strong><span>Preparing</span></div>
+                <div><strong id="ready-count">0</strong><span>Ready</span></div>
+            </div>
+        </div>
+
+        <div id="error" class="error-message" role="alert" hidden></div>
+
+        <div class="columns">
+            <section class="column new" aria-labelledby="new-heading">
+                <div class="column-heading">
+                    <h2 id="new-heading">New orders</h2>
+                    <span id="new-pill" class="count-pill">0</span>
+                </div>
+                <div id="new-orders" class="orders" aria-live="off"></div>
+            </section>
+            <section class="column preparing" aria-labelledby="preparing-heading">
+                <div class="column-heading">
+                    <h2 id="preparing-heading">Preparing</h2>
+                    <span id="preparing-pill" class="count-pill">0</span>
+                </div>
+                <div id="preparing-orders" class="orders" aria-live="off"></div>
+            </section>
+            <section class="column ready" aria-labelledby="ready-heading">
+                <div class="column-heading">
+                    <h2 id="ready-heading">Ready for pickup</h2>
+                    <span id="ready-pill" class="count-pill">0</span>
+                </div>
+                <div id="ready-orders" class="orders" aria-live="off"></div>
+            </section>
+        </div>
+
+        <details class="completed">
+            <summary>Completed orders <span id="served-count">0</span></summary>
+            <div id="served-orders" class="completed-grid"></div>
+        </details>
+        <p class="footnote">Shows recent orders from the last 24 hours. Size, sweetness, and ice are shown when recorded; extra topping choices are not yet saved by the current checkout API.</p>
+    </main>
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 </body>
 </html>
