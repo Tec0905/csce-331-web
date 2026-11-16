@@ -38,6 +38,57 @@ const customizerSubmit = document.getElementById("customizer-submit");
 
 let noticeTimeout;
 
+// Keeps the order if the page reloads, such as when the language is switched.
+const SAVED_ORDER_KEY = "kioskOrder";
+
+function saveOrder() {
+    try {
+        const lines = [...order.values()].map(({ item, choices, quantity }) => ({
+            itemId: item.id,
+            choices,
+            quantity
+        }));
+
+        sessionStorage.setItem(SAVED_ORDER_KEY, JSON.stringify(lines));
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+// Only drinks and choices that still exist on the menu are brought back.
+function restoreOrder() {
+    try {
+        const lines = JSON.parse(
+            sessionStorage.getItem(SAVED_ORDER_KEY) || "[]"
+        );
+
+        lines.forEach(({ itemId, choices, quantity }) => {
+            const item = shop.items.find(option => option.id === itemId);
+
+            const valid = item &&
+                choices &&
+                Array.isArray(choices.toppings) &&
+                findOption(shop.sizes, choices.size) &&
+                findOption(shop.sugarLevels, choices.sugar) &&
+                findOption(shop.iceLevels, choices.ice) &&
+                choices.toppings.every(id => findOption(shop.toppings, id)) &&
+                Number.isInteger(quantity) &&
+                quantity > 0;
+
+            if (!valid) return;
+
+            order.set(getOrderKey(item, choices), {
+                item,
+                choices,
+                unitPrice: getUnitPrice(item, choices),
+                quantity
+            });
+        });
+    } catch (error) {
+        console.error(error);
+    }
+}
+
 function money(amount) {
     return "$" + amount.toFixed(2);
 }
@@ -497,6 +548,7 @@ function renderOrder() {
         ? "Placing your order…"
         : "Checkout · " + money(totals.total);
     checkout.disabled = totals.count === 0 || isPlacingOrder;
+    saveOrder();
 }
 
 function showNotice(message, duration = NOTICE_DURATION_MS) {
@@ -561,6 +613,8 @@ async function loadMenu() {
         renderMenuMessage("We couldn't load the menu right now.", true);
         return;
     }
+
+    restoreOrder();
 
     document.getElementById("tax-label").textContent =
         "Tax (" + (shop.taxRate * 100).toFixed(2) + "%)";
