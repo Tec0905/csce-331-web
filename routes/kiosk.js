@@ -1,7 +1,11 @@
 const express = require('express');
 const pool = require('../db');
+const coupons = require('./coupons');
 
 const router = express.Router();
+
+// Slot machine routes: POST /api/kiosk/spin and GET /api/kiosk/coupons/:code
+router.use(coupons.router);
 
 // Pricing rules match the Project 2 cashier so both record sales the same way.
 const TAX_RATE = 0.0825;
@@ -143,6 +147,11 @@ function validateOrder(body) {
         throw new InvalidOrderError('This order has no drinks in it.');
     }
 
+    if (body.couponCode !== undefined && body.couponCode !== null &&
+        typeof body.couponCode !== 'string') {
+        throw new InvalidOrderError('That coupon code is not valid.');
+    }
+
     body.items.forEach(line => {
         if (line === null || typeof line !== 'object') {
             throw new InvalidOrderError('This order has an invalid drink in it.');
@@ -196,14 +205,20 @@ function priceOrder(lines, menuItems, toppings, recipeLines) {
     });
 }
 
-function calculateTotals(pricedLines) {
-    const subtotalCents = pricedLines.reduce((sum, line) => {
+// A slot machine coupon comes off before tax. The saved subtotal is what the
+// customer actually paid for, so sales reports count the discounted amount.
+function calculateTotals(pricedLines, coupon = null) {
+    const itemsCents = pricedLines.reduce((sum, line) => {
         return sum + line.unitPriceCents * line.quantity;
     }, 0);
 
+    const discountCents = coupons.discountCents(coupon, itemsCents);
+    const subtotalCents = itemsCents - discountCents;
     const taxCents = Math.round(subtotalCents * TAX_RATE);
 
     return {
+        itemsCents,
+        discountCents,
         subtotalCents,
         taxCents,
         totalCents: subtotalCents + taxCents + TIP_CENTS
@@ -271,13 +286,17 @@ async function subtractInventory(client, line) {
     }
 }
 
-// All of an order is saved, or none of it is.
-async function saveOrder(pricedLines, totals) {
+// All of an order is saved, or none of it is, coupon included.
+async function saveOrder(pricedLines, couponCode) {
     const client = await pool.connect();
 
     try {
         await client.query('BEGIN');
 
+        const coupon = couponCode
+            ? await coupons.lockForOrder(client, couponCode)
+            : null;
+        const totals = calculateTotals(pricedLines, coupon);
         const orderId = await insertOrder(client, totals);
 
         for (const line of pricedLines) {
@@ -285,9 +304,13 @@ async function saveOrder(pricedLines, totals) {
             await subtractInventory(client, line);
         }
 
+        if (coupon) {
+            await coupons.markRedeemed(client, coupon, orderId, totals.discountCents);
+        }
+
         await client.query('COMMIT');
 
-        return orderId;
+        return { orderId, totals };
     } catch (error) {
         await client.query('ROLLBACK');
         throw error;
@@ -357,18 +380,25 @@ router.post('/orders', async (req, res) => {
 
         const pricedLines =
             priceOrder(req.body.items, menuItems, toppings, recipeLines);
-        const totals = calculateTotals(pricedLines);
-        const orderId = await saveOrder(pricedLines, totals);
+        const { orderId, totals } =
+            await saveOrder(pricedLines, req.body.couponCode || null);
 
         res.status(201).json({
             orderId,
             subtotal: toDollars(totals.subtotalCents),
+            discount: toDollars(totals.discountCents),
             tax: toDollars(totals.taxCents),
             total: toDollars(totals.totalCents)
         });
     } catch (error) {
         if (error instanceof InvalidOrderError) {
             res.status(400).json({ message: error.message });
+            return;
+        }
+
+        // The order is fine but the coupon isn't, so the kiosk drops the coupon.
+        if (error instanceof coupons.CouponError) {
+            res.status(400).json({ message: error.message, couponInvalid: true });
             return;
         }
 

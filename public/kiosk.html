@@ -10,6 +10,7 @@
     <link rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap">
     <link rel="stylesheet" href="kiosk.css">
+    <link rel="stylesheet" href="slot-machine.css">
 </head>
 
 <body>
@@ -51,6 +52,11 @@
                     <span id="subtotal">$0.00</span>
                 </div>
 
+                <div class="summary-line discount" id="discount-line" hidden>
+                    <span id="discount-label">Lucky Boba discount</span>
+                    <span id="discount">−$0.00</span>
+                </div>
+
                 <div class="summary-line muted">
                     <span id="tax-label">Tax</span>
                     <span id="tax">$0.00</span>
@@ -60,6 +66,8 @@
                     <span>Total</span>
                     <span id="total">$0.00</span>
                 </div>
+
+                <div class="slot-promo" id="slot-promo"></div>
 
                 <button class="checkout-button" id="checkout"
                         type="button" disabled>
@@ -96,10 +104,44 @@
         </form>
     </dialog>
 
+    <dialog class="slot-dialog" id="slot-dialog"
+            aria-labelledby="slot-title" aria-describedby="slot-rules">
+        <div class="slot-body">
+            <h2 id="slot-title">Lucky Boba Slots</h2>
+            <p class="slot-rules" id="slot-rules">
+                One free spin per order.
+                <strong>Three boba</strong>: 25% off ·
+                <strong>Three of a kind</strong>: 10% off ·
+                <strong>Two boba</strong>: a free topping
+            </p>
+
+            <div class="slot-machine">
+                <div class="slot-marquee notranslate" translate="no" aria-hidden="true">★ 83 GUYS ★</div>
+                <div class="slot-reels" aria-hidden="true">
+                    <div class="slot-reel"><div class="slot-strip"></div></div>
+                    <div class="slot-reel"><div class="slot-strip"></div></div>
+                    <div class="slot-reel"><div class="slot-strip"></div></div>
+                </div>
+            </div>
+
+            <p class="slot-result" id="slot-result" role="status" aria-live="polite"></p>
+
+            <div class="slot-actions">
+                <button class="cancel-button" id="slot-close" type="button">
+                    Back to my order
+                </button>
+                <button class="checkout-button" id="slot-spin" type="button">
+                    Spin!
+                </button>
+            </div>
+        </div>
+    </dialog>
+
     <div class="notice" id="notice" role="status"
          aria-live="polite" hidden></div>
 
     <script src="kiosk-visuals.js"></script>
+    <script src="slot-machine.js"></script>
     <script src="kiosk.js"></script>
     <script src="i18n.js"></script>
 </body>
