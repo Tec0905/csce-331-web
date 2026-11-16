@@ -452,13 +452,16 @@ function calculateTotals() {
     });
 
     // Round to cents the same way the server does, so the totals always match.
+    // A slot machine coupon comes off before tax, same as on the server.
     const subtotalCents = Math.round(subtotal * 100);
-    const taxCents = Math.round(subtotalCents * shop.taxRate);
+    const discountCents = SlotMachine.discountCents(subtotalCents);
+    const taxCents = Math.round((subtotalCents - discountCents) * shop.taxRate);
 
     return {
         subtotal: subtotalCents / 100,
+        discount: discountCents / 100,
         tax: taxCents / 100,
-        total: (subtotalCents + taxCents) / 100,
+        total: (subtotalCents - discountCents + taxCents) / 100,
         count
     };
 }
@@ -541,6 +544,10 @@ function renderOrder() {
 
     document.getElementById("subtotal").textContent =
         money(totals.subtotal);
+
+    document.getElementById("discount-line").hidden = totals.discount === 0;
+    document.getElementById("discount").textContent =
+        "−" + money(totals.discount);
     document.getElementById("tax").textContent = money(totals.tax);
     document.getElementById("total").textContent = money(totals.total);
 
@@ -549,6 +556,7 @@ function renderOrder() {
         : "Checkout · " + money(totals.total);
     checkout.disabled = totals.count === 0 || isPlacingOrder;
     saveOrder();
+    SlotMachine.update(totals.count);
 }
 
 function showNotice(message, duration = NOTICE_DURATION_MS) {
@@ -571,7 +579,7 @@ function getOrderRequest() {
         toppingIds: choices.toppings
     }));
 
-    return { items };
+    return { items, couponCode: SlotMachine.getCouponCode() };
 }
 
 async function submitOrder() {
@@ -584,7 +592,9 @@ async function submitOrder() {
     const result = await response.json();
 
     if (!response.ok) {
-        throw new Error(result.message);
+        const error = new Error(result.message);
+        error.couponInvalid = result.couponInvalid === true;
+        throw error;
     }
 
     return result;
@@ -650,18 +660,35 @@ checkout.addEventListener("click", async () => {
 
     try {
         const result = await submitOrder();
+        const saved = Number(result.discount) > 0
+            ? " You saved $" + result.discount + "!"
+            : "";
 
         order.clear();
+        SlotMachine.finishOrder();
         showNotice(
-            "Order #" + result.orderId + " placed. Total: $" + result.total,
+            "Order #" + result.orderId + " placed. Total: $" + result.total + "." + saved,
             ORDER_PLACED_NOTICE_MS
         );
     } catch (error) {
         console.error(error);
-        showNotice("We couldn't place your order. Please try again.");
+
+        // The coupon can't be used, so it's removed and the order stays.
+        if (error.couponInvalid) {
+            SlotMachine.dropCoupon();
+            showNotice(error.message + " It was removed. Please check out again.",
+                ORDER_PLACED_NOTICE_MS);
+        } else {
+            showNotice("We couldn't place your order. Please try again.");
+        }
     }
 
     setPlacingOrder(false);
+});
+
+// Winning, losing, or expiring a coupon changes the totals.
+SlotMachine.onChange(() => {
+    if (shop) renderOrder();
 });
 
 loadMenu();
