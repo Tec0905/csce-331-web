@@ -312,9 +312,23 @@ async function saveOrder(pricedLines, couponCode) {
 
         return { orderId, totals };
     } catch (error) {
+    console.error('Kiosk transaction failed:', {
+        code: error.code,
+        message: error.message,
+        detail: error.detail,
+        constraint: error.constraint,
+        table: error.table,
+        column: error.column
+    });
+
+    try {
         await client.query('ROLLBACK');
-        throw error;
-    } finally {
+    } catch (rollbackError) {
+        console.error('Kiosk rollback failed:', rollbackError.message);
+    }
+
+    throw error;
+}finally {
         client.release();
     }
 }
