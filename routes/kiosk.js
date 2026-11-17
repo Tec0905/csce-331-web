@@ -56,7 +56,7 @@ function toDollars(cents) {
 function getKioskEmployeeId() {
     return process.env.KIOSK_EMPLOYEE_ID
         ? Number(process.env.KIOSK_EMPLOYEE_ID)
-        : null;
+        : 13;
 }
 
 async function getActiveMenuItems(db) {
