@@ -289,6 +289,7 @@ async function subtractInventory(client, line) {
 // All of an order is saved, or none of it is, coupon included.
 async function saveOrder(pricedLines, couponCode) {
     const client = await pool.connect();
+    let stage = 'starting transaction';
 
     try {
         await client.query('BEGIN');
@@ -297,10 +298,14 @@ async function saveOrder(pricedLines, couponCode) {
             ? await coupons.lockForOrder(client, couponCode)
             : null;
         const totals = calculateTotals(pricedLines, coupon);
+        stage = 'inserting order';
         const orderId = await insertOrder(client, totals);
 
         for (const line of pricedLines) {
+            stage = 'inserting order item';
             await insertOrderLine(client, orderId, line);
+
+            stage = 'updating inventory';
             await subtractInventory(client, line);
         }
 
@@ -313,13 +318,14 @@ async function saveOrder(pricedLines, couponCode) {
         return { orderId, totals };
     } catch (error) {
     console.error('Kiosk transaction failed:', {
+        stage,
         code: error.code,
         message: error.message,
         detail: error.detail,
         constraint: error.constraint,
         table: error.table,
         column: error.column
-    });
+});
 
     try {
         await client.query('ROLLBACK');
